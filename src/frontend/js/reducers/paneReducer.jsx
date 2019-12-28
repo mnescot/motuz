@@ -19,16 +19,13 @@ const INITIAL_PANE = {
         id: 0,
         name: constants.local_name,
         type: 'file',
-        access_key_id: '',
-        access_key_secret: '',
-        region: '',
     },
     path: '/',
     sortingColumn: 'name',
     sortingAsc: true,
     fileFocusIndex: 0,
+    fileMultiFocusIndexes: {0: true},
     history: [],
-    fileSelectedIndexes: {},
 }
 
 const initialState = {
@@ -67,6 +64,64 @@ export default (state=initialState, action) => {
                 ...setCurrentPane(state, {
                     ...getCurrentPane(state, side),
                     fileFocusIndex: index,
+                    fileMultiFocusIndexes: {[index]: true},
+                }, side)
+            }
+        }
+    }
+    case pane.FILE_MULTI_FOCUS_INDEX: {
+        const index = action.payload.index;
+        const side = action.payload.side || getSide(state);
+
+        const currPane = getCurrentPane(state, side)
+        const fileMultiFocusIndexes = {...currPane.fileMultiFocusIndexes}
+        let fileFocusIndex = index
+        if (fileMultiFocusIndexes[index]) { // Action is deselection
+            if (currPane.fileFocusIndex === index) { // The latest selected file
+                const keys = Object.keys(fileMultiFocusIndexes).map(Number)
+                if (keys.length <= 1) {
+                    return state // At least one item should always be selected
+                }
+                fileFocusIndex = keys.filter(d => d !== index)[0] // keys are strings
+            } else {
+                fileFocusIndex = currPane.fileFocusIndex
+            }
+            delete fileMultiFocusIndexes[index]
+        } else { // Action is selection
+            fileMultiFocusIndexes[index] = true
+        }
+
+        return {
+            ...state,
+            panes: {
+                ...setCurrentPane(state, {
+                    ...currPane,
+                    fileFocusIndex,
+                    fileMultiFocusIndexes,
+                }, side)
+            }
+        }
+    }
+    case pane.FILE_RANGE_FOCUS_INDEX: {
+        const index = action.payload.index;
+        const side = action.payload.side || getSide(state);
+
+        const currPane = getCurrentPane(state, side)
+        const fileMultiFocusIndexes = {
+            ...currPane.fileMultiFocusIndexes,
+        }
+        const start = Math.min(currPane.fileFocusIndex, index)
+        const end = Math.max(currPane.fileFocusIndex, index)
+        for (let i = start; i <= end; i++) {
+            fileMultiFocusIndexes[i] = true
+        }
+
+        return {
+            ...state,
+            panes: {
+                ...setCurrentPane(state, {
+                    ...currPane,
+                    fileMultiFocusIndexes,
                 }, side)
             }
         }
@@ -79,7 +134,8 @@ export default (state=initialState, action) => {
             panes: {
                 ...setCurrentPane(state, {
                     ...getCurrentPane(state, side),
-                    fileFocusIndex: 0,
+                    fileFocusIndex: INITIAL_PANE.fileFocusIndex,
+                    fileMultiFocusIndexes: INITIAL_PANE.fileMultiFocusIndexes,
                     path,
                 }, side)
             },
@@ -100,7 +156,7 @@ export default (state=initialState, action) => {
         const {side, host} = action.payload;
 
         let path = host.bucket || ''
-        path = path.replace(/^\/*/, '/') // Allow at most one leading slash
+        path = path.replace(/^\/*/, '/') // Enforce exactly one leading slash
 
         // TODO: Rclone does not allow leading slashes for gcp connections only
         if (host.type === "google cloud storage") {
@@ -112,7 +168,8 @@ export default (state=initialState, action) => {
             panes: {
                 ...setCurrentPane(state, {
                     ...getCurrentPane(state, side),
-                    fileFocusIndex: 0,
+                    fileFocusIndex: INITIAL_PANE.fileFocusIndex,
+                    fileMultiFocusIndexes: INITIAL_PANE.fileMultiFocusIndexes,
                     path,
                     host,
                 }, side)
@@ -218,10 +275,12 @@ export default (state=initialState, action) => {
             panes: {
                 left: [{
                     ...getCurrentPane(state, 'left'),
+                    host: INITIAL_PANE.host,
                     path,
                 }],
                 right: [{
                     ...getCurrentPane(state, 'right'),
+                    host: INITIAL_PANE.host,
                     path,
                 }],
             },

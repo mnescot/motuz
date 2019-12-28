@@ -19,8 +19,8 @@ class PaneFile extends React.Component {
                     className={classnames({
                         'grid-file-row': true,
                         'active': this.props.active,
-                        'pl-2': true,
                     })}
+                    style={{paddingLeft: "10px"}}
                     onClick={event => this.props.onClick(event)}
                     onDoubleClick={event => this.props.onDoubleClick(event)}
                     onMouseDown={event => this.props.onMouseDown(event)}
@@ -65,12 +65,4 @@ PaneFile.defaultProps = {
     onMouseDown: event => {},
 }
 
-import {connect} from 'react-redux';
-
-const mapStateToProps = state => ({
-});
-
-const mapDispatchToProps = dispatch => ({
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(PaneFile);
+export default PaneFile;

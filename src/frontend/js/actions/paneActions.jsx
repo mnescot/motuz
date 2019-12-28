@@ -3,12 +3,24 @@ import { getCurrentPane } from 'managers/paneManager.jsx'
 
 export const SIDE_FOCUS = '@@pane/SIDE_FOCUS';
 export const FILE_FOCUS_INDEX = '@@pane/FILE_FOCUS_INDEX';
+export const FILE_MULTI_FOCUS_INDEX = '@@pane/FILE_MULTI_FOCUS_INDEX';
+export const FILE_RANGE_FOCUS_INDEX = '@@pane/FILE_RANGE_FOCUS_INDEX';
 export const DIRECTORY_CHANGE = '@@pane/DIRECTORY_CHANGE';
 export const HOST_CHANGE = '@@pane/HOST_CHANGE';
 
 
 export const fileFocusIndex = (side, index) => ({
     type: FILE_FOCUS_INDEX,
+    payload: {side, index},
+});
+
+export const fileMultiFocusIndexes = (side, index) => ({
+    type: FILE_MULTI_FOCUS_INDEX,
+    payload: {side, index},
+});
+
+export const fileRangeFocusIndex = (side, index) => ({
+    type: FILE_RANGE_FOCUS_INDEX,
     payload: {side, index},
 });
 
@@ -67,6 +79,18 @@ export const directoryChange = (side=null, path) => {
             path,
             settings: state.settings,
         }));
+    }
+}
+
+export const refreshPane = (side='left') => {
+    return async (dispatch, getState) => {
+        const state = getState();
+
+        const path = state.pane.panes[side][0].path;
+
+        await Promise.all([
+            dispatch(directoryChange(side, path)),
+        ]);
     }
 }
 
